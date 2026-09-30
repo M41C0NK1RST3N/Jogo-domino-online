@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dominó Online</title>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --table-bg: radial-gradient(circle, #1e3a2b 0%, #0d2318 100%);
+      --accent-color: #2eb872;
+      --accent-hover: #25985e;
+      --text-main: #f8fafc;
+      --tile-bg: linear-gradient(145deg, #ffffff, #e2e8f0);
+      --tile-border: #cbd5e1;
+      --dot-color: #0f172a;
+      --highlight: #f59e0b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 15px;
+      overflow-x: hidden;
+    }
+
+    header {
+      width: 100%;
+      max-width: 1000px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+      background: rgba(30, 41, 59, 0.8);
+      backdrop-filter: blur(8px);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .scoreboard {
+      display: flex;
+      gap: 20px;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .score-badge {
+      background: rgba(15, 23, 42, 0.6);
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .score-badge span {
+      color: var(--accent-color);
+    }
+
+    .game-table {
+      width: 100%;
+      max-width: 1000px;
+      height: 60vh;
+      background: var(--table-bg);
+      border-radius: 24px;
+      border: 4px solid #1e293b;
+      box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.8), 0 10px 30px rgba(0, 0, 0, 0.5);
+      margin: 15px 0;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    .bot-area {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .tile-back {
+      width: 28px;
+      height: 50px;
+      background: linear-gradient(135deg, #334155, #1e293b);
+      border: 1px solid #475569;
+      border-radius: 4px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+
+    .board-center {
+      width: 100%;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 20px;
+      gap: 4px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent-color) transparent;
+    }
+
+    .board-center::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .board-center::-webkit-scrollbar-thumb {
+      background-color: var(--accent-color);
+      border-radius: 10px;
+    }
+
+    .status-banner {
+      position: absolute;
+      top: 15px;
+      background: rgba(15, 23, 42, 0.85);
+      padding: 6px 18px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+
+    .controls-bar {
+      width: 100%;
+      max-width: 1000px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      background: var(--accent-color);
+      color: #ffffff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+    }
+
+    .btn:disabled {
+      background: #475569;
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: #334155;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #475569;
+    }
+
+    .player-hand {
+      display: flex;
+      gap: 10px;
+      padding: 10px;
+      background: rgba(30, 41, 59, 0.5);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      min-height: 100px;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* Domino Tile Component */
+    .domino {
+      width: 44px;
+      height: 80px;
+      background: var(--tile-bg);
+      border: 1px solid var(--tile-border);
+      border-radius: 6px;
+      box-shadow: 2px 4px 8px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 4px;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .domino.horizontal {
+      width: 80px;
+      height: 44px;
+      flex-direction: row;
+    }
+
+    .domino.playable {
+      border: 2px solid var(--highlight);
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
+      transform: translateY(-4px);
+    }
+
+    .domino:hover.playable {
+      transform: translateY(-8px);
+    }
+
+    .domino-half {
+      width: 100%;
+      height: 34px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      padding: 2px;
+      box-sizing: border-box;
+    }
+
+    .domino.horizontal .domino-half {
+      width: 34px;
+      height: 100%;
+    }
+
+    .divider-v {
+      width: 100%;
+      height: 2px;
+      background: #94a3b8;
+      margin: 1px 0;
+    }
+
+    .divider-h {
+      width: 2px;
+      height: 100%;
+      background: #94a3b8;
+      margin: 0 1px;
+    }
+
+    .dot-cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: transparent;
+    }
+
+    .dot.active {
+      background-color: var(--dot-color);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: #1e293b;
+      padding: 30px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-card h2 {
+      margin-bottom: 12px;
+      font-size: 1.6rem;
+    }
+
+    .modal-card p {
+      margin-bottom: 20px;
+      color: #94a3b8;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🁃 Dominó Online</h1>
+    <div class="scoreboard">
+      <div class="score-badge">Você: <span id="score-player">0</span></div>
+      <div class="score-badge">Robô: <span id="score-bot">0</span></div>
+      <div class="score-badge">Monte: <span id="score-boneyard">14</span></div>
+    </div>
+  </header>
+
+  <main class="game-table">
+    <div class="status-banner" id="status-text">Iniciando partida...</div>
+    
+    <div class="bot-area" id="bot-hand"></div>
+
+    <div class="board-center" id="board-tiles"></div>
+  </main>
+
+  <footer class="controls-bar">
+    <div class="action-buttons">
+      <button class="btn" id="btn-draw" onclick="drawTile()" disabled>Comprar Peça</button>
+      <button class="btn btn-secondary" id="btn-pass" onclick="passTurn()" disabled>Passar Vez</button>
+      <button class="btn btn-secondary" onclick="resetGame()">Novo Jogo</button>
+    </div>
+
+    <div class="player-hand" id="player-hand"></div>
+  </footer>
+
+  <!-- Modal Fim de Rodada / Escolha de Lado -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal-card">
+      <h2 id="modal-title">Fim de Jogo</h2>
+      <p id="modal-desc">Descrição do resultado.</p>
+      <div class="modal-actions" id="modal-actions">
+        <button class="btn" onclick="closeModal(); startRound();">Próxima Rodada</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const PIP_LAYOUTS = {
+      0: [],
+      1: [4],
+      2: [0, 8],
+      3: [0, 4, 8],
+      4: [0, 2, 6, 8],
+      5: [0, 2, 4, 6, 8],
+      6: [0, 2, 3, 5, 6, 8]
+    };
+
+    let boneyard = [];
+    let playerHand = [];
+    let botHand = [];
+    let board = [];
+    let leftVal = null;
+    let rightVal = null;
+    let currentTurn = 'player';
+    let consecutivePasses = 0;
+    let scores = { player: 0, bot: 0 };
+    let pendingTileIdx = null;
+
+    function createFullSet() {
+      const tiles = [];
+      for (let i = 0; i <= 6; i++) {
+        for (let j = i; j <= 6; j++) {
+          tiles.push([i, j]);
+        }
+      }
+      return tiles;
+    }
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function createTileElement(tile, isHorizontal = false) {
+      const domino = document.createElement('div');
+      domino.className = `domino ${isHorizontal ? 'horizontal' : ''}`;
+
+      const createHalf = (val) => {
+        const half = document.createElement('div');
+        half.className = 'domino-half';
+        const activeDots = PIP_LAYOUTS[val] || [];
+        for (let i = 0; i < 9; i++) {
+          const cell = document.createElement('div');
+          cell.className = 'dot-cell';
+          const dot = document.createElement('div');
+          dot.className = `dot ${activeDots.includes(i) ? 'active' : ''}`;
+          cell.appendChild(dot);
+          half.appendChild(cell);
+        }
+        return half;
+      };
+
+      domino.appendChild(createHalf(tile[0]));
+      const divider = document.createElement('div');
+      divider.className = isHorizontal ? 'divider-h' : 'divider-v';
+      domino.appendChild(divider);
+      domino.appendChild(createHalf(tile[1]));
+
+      return domino;
+    }
+
+    function startRound() {
+      const fullSet = shuffle(createFullSet());
+      playerHand = fullSet.splice(0, 7);
+      botHand = fullSet.splice(0, 7);
+      boneyard = fullSet;
+      board = [];
+      leftVal = null;
+      rightVal = null;
+      consecutivePasses = 0;
+
+      // Determina quem começa (maior bucha ou maior ponto)
+      let pMaxDouble = getMaxDouble(playerHand);
+      let bMaxDouble = getMaxDouble(botHand);
+
+      if (pMaxDouble >= 0 || bMaxDouble >= 0) {
+        currentTurn = pMaxDouble >= bMaxDouble ? 'player' : 'bot';
+      } else {
+        currentTurn = getHandSum(playerHand) >= getHandSum(botHand) ? 'player' : 'bot';
+      }
+
+      updateUI();
+      setStatus(currentTurn === 'player' ? 'Sua vez de jogar!' : 'Robô começa a jogar...');
+
+      if (currentTurn === 'bot') {
+        setTimeout(botTurn, 1000);
+      }
+    }
+
+    function getMaxDouble(hand) {
+      let max = -1;
+      hand.forEach(t => {
+        if (t[0] === t[1] && t[0] > max) max = t[0];
+      });
+      return max;
+    }
+
+    function getHandSum(hand) {
+      return hand.reduce((acc, t) => acc + t[0] + t[1], 0);
+    }
+
+    function canPlay(tile) {
+      if (board.length === 0) return true;
+      return tile[0] === leftVal || tile[1] === leftVal || tile[0] === rightVal || tile[1] === rightVal;
+    }
+
+    function canPlayLeft(tile) {
+      if (board.length === 0) return true;
+      return tile[0] === leftVal || tile[1] === leftVal;
+    }
+
+    function canPlayRight(tile) {
+      if (board.length === 0) return true;
+      return tile[0] === rightVal || tile[1] === rightVal;
+    }
+
+    function handlePlayerTileClick(index) {
+      if (currentTurn !== 'player') return;
+      const tile = playerHand[index];
+      if (!canPlay(tile)) return;
+
+      const fitsLeft = canPlayLeft(tile);
+      const fitsRight = canPlayRight(tile);
+
+      if (board.length === 0) {
+        executePlay('player', index, 'left');
+      } else if (fitsLeft && fitsRight && leftVal !== rightVal) {
+        pendingTileIdx = index;
+        showChoiceModal(tile);
+      } else if (fitsLeft) {
+        executePlay('player', index, 'left');
+      } else if (fitsRight) {
+        executePlay('player', index, 'right');
+      }
+    }
+
+    function executePlay(who, index, side) {
+      const hand = who === 'player' ? playerHand : botHand;
+      const tile = hand.splice(index, 1)[0];
+
+      if (board.length === 0) {
+        board.push(tile);
+        leftVal = tile[0];
+        rightVal = tile[1];
+      } else if (side === 'left') {
+        if (tile[1] === leftVal) {
+          board.unshift(tile);
+          leftVal = tile[0];
+        } else {
+          board.unshift([tile[1], tile[0]]);
+          leftVal = tile[1];
+        }
+      } else if (side === 'right') {
+        if (tile[0] === rightVal) {
+          board.push(tile);
+          rightVal = tile[1];
+        } else {
+          board.push([tile[1], tile[0]]);
+          rightVal = tile[0];
+        }
+      }
+
+      consecutivePasses = 0;
+
+      if (hand.length === 0) {
+        endRound(who, who === 'player' ? 'Você bateu e venceu a rodada!' : 'O Robô bateu e venceu a rodada.');
+        return;
+      }
+
+      currentTurn = who === 'player' ? 'bot' : 'player';
+      updateUI();
+
+      if (currentTurn === 'bot') {
+        setStatus('Robô está pensando...');
+        setTimeout(botTurn, 1000);
+      } else {
+        setStatus('Sua vez de jogar!');
+      }
+    }
+
+    function botTurn() {
+      if (currentTurn !== 'bot') return;
+
+      let validIndices = [];
+      botHand.forEach((t, i) => {
+        if (canPlay(t)) validIndices.push(i);
+      });
+
+      if (validIndices.length > 0) {
+        // Robô escolhe a peça de maior valor
+        validIndices.sort((a, b) => (botHand[b][0] + botHand[b][1]) - (botHand[a][0] + botHand[a][1]));
+        const chosenIdx = validIndices[0];
+        const tile = botHand[chosenIdx];
+
+        let side = 'left';
+        if (canPlayLeft(tile) && canPlayRight(tile)) {
+          side = Math.random() > 0.5 ? 'left' : 'right';
+        } else if (canPlayRight(tile)) {
+          side = 'right';
+        }
+
+        executePlay('bot', chosenIdx, side);
+      } else if (boneyard.length > 0) {
+        botHand.push(boneyard.pop());
+        setStatus('Robô comprou uma peça.');
+        updateUI();
+        setTimeout(botTurn, 800);
+      } else {
+        consecutivePasses++;
+        setStatus('Robô passou a vez.');
+        if (consecutivePasses >= 2) {
+          handleGameLocked();
+          return;
+        }
+        currentTurn = 'player';
+        updateUI();
+      }
+    }
+
+    function drawTile() {
+      if (currentTurn !== 'player' || boneyard.length === 0) return;
+      const drawn = boneyard.pop();
+      playerHand.push(drawn);
+      updateUI();
+      
+      if (!hasValidMove(playerHand) && boneyard.length === 0) {
+        setStatus('Nenhuma peça jogável. Passe a vez.');
+      } else {
+        setStatus('Você comprou uma peça.');
+      }
+    }
+
+    function passTurn() {
+      if (currentTurn !== 'player') return;
+      consecutivePasses++;
+      if (consecutivePasses >= 2) {
+        handleGameLocked();
+        return;
+      }
+      currentTurn = 'bot';
+      setStatus('Você passou a vez. Robô jogando...');
+      updateUI();
+      setTimeout(botTurn, 1000);
+    }
+
+    function hasValidMove(hand) {
+      return hand.some(t => canPlay(t));
+    }
+
+    function handleGameLocked() {
+      const playerSum = getHandSum(playerHand);
+      const botSum = getHandSum(botHand);
+
+      if (playerSum < botSum) {
+        endRound('player', `Jogo trancado! Você venceu nos pontos (${playerSum} vs ${botSum}).`);
+      } else if (botSum < playerSum) {
+        endRound('bot', `Jogo trancado! Robô venceu nos pontos (${botSum} vs ${playerSum}).`);
+      } else {
+        endRound('tie', `Jogo trancado! Empate perfeito em pontos (${playerSum}).`);
+      }
+    }
+
+    function endRound(winner, message) {
+      let points = 0;
+      if (winner === 'player') {
+        points = getHandSum(botHand);
+        scores.player += points;
+      } else if (winner === 'bot') {
+        points = getHandSum(playerHand);
+        scores.bot += points;
+      }
+
+      updateUI();
+
+      const modal = document.getElementById('modal');
+      const title = document.getElementById('modal-title');
+      const desc = document.getElementById('modal-desc');
+      const actions = document.getElementById('modal-actions');
+
+      title.innerText = winner === 'player' ? '🎉 Vitória!' : winner === 'bot' ? '🤖 Derrota' : '🤝 Empate';
+      desc.innerText = `${message} +${points} pontos.`;
+      actions.innerHTML = `<button class="btn" onclick="closeModal(); startRound();">Próxima Rodada</button>`;
+
+      modal.classList.add('active');
+    }
+
+    function showChoiceModal(tile) {
+      const modal = document.getElementById('modal');
+      const title = document.getElementById('modal-title');
+      const desc = document.getElementById('modal-desc');
+      const actions = document.getElementById('modal-actions');
+
+      title.innerText = 'Escolha o Lado';
+      desc.innerText = `Onde deseja jogar a peça [${tile[0]}|${tile[1]}]?`;
+      actions.innerHTML = `
+        <button class="btn" onclick="closeModal(); executePlay('player', pendingTileIdx, 'left');">Esquerda</button>
+        <button class="btn" onclick="closeModal(); executePlay('player', pendingTileIdx, 'right');">Direita</button>
+      `;
+
+      modal.classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.remove('active');
+    }
+
+    function setStatus(text) {
+      document.getElementById('status-text').innerText = text;
+    }
+
+    function updateUI() {
+      // Placar e Monte
+      document.getElementById('score-player').innerText = scores.player;
+      document.getElementById('score-bot').innerText = scores.scoreBot || scores.bot;
+      document.getElementById('score-boneyard').innerText = boneyard.length;
+
+      // Mão do Robô (peças ocultas)
+      const botContainer = document.getElementById('bot-hand');
+      botContainer.innerHTML = '';
+      botHand.forEach(() => {
+        const card = document.createElement('div');
+        card.className = 'tile-back';
+        botContainer.appendChild(card);
+      });
+
+      // Mesa
+      const boardContainer = document.getElementById('board-tiles');
+      boardContainer.innerHTML = '';
+      board.forEach((t) => {
+        const isDouble = t[0] === t[1];
+        const el = createTileElement(t, !isDouble);
+        boardContainer.appendChild(el);
+      });
+      boardContainer.scrollLeft = boardContainer.scrollWidth;
+
+      // Mão do Jogador
+      const playerContainer = document.getElementById('player-hand');
+      playerContainer.innerHTML = '';
+      const playerCanMove = hasValidMove(playerHand);
+
+      playerHand.forEach((t, index) => {
+        const el = createTileElement(t, false);
+        if (currentTurn === 'player' && canPlay(t)) {
+          el.classList.add('playable');
+        }
+        el.onclick = () => handlePlayerTileClick(index);
+        playerContainer.appendChild(el);
+      });
+
+      // Botões de Ação
+      const btnDraw = document.getElementById('btn-draw');
+      const btnPass = document.getElementById('btn-pass');
+
+      btnDraw.disabled = currentTurn !== 'player' || playerCanMove || boneyard.length === 0;
+      btnPass.disabled = currentTurn !== 'player' || playerCanMove || boneyard.length > 0;
+    }
+
+    function resetGame() {
+      scores = { player: 0, bot: 0 };
+      startRound();
+    }
+
+    // Inicialização
+    startRound();
+  </script>
+</body>
+</html>
